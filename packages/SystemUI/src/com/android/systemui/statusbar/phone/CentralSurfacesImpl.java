@@ -246,7 +246,6 @@ import com.android.systemui.statusbar.window.StatusBarWindowControllerStore;
 import com.android.systemui.statusbar.window.StatusBarWindowStateController;
 import com.android.systemui.surfaceeffects.ripple.RippleShader.RippleShape;
 import com.android.systemui.topui.TopUiController;
-import com.android.systemui.tuner.TunerService;
 import com.android.systemui.util.DumpUtilsKt;
 import com.android.systemui.util.WallpaperController;
 import com.android.systemui.util.concurrency.DelayableExecutor;
@@ -290,11 +289,7 @@ import javax.inject.Named;
  * {@link ActivityStarterImpl}
  */
 @SysUISingleton
-public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces,
-        TunerService.Tunable {
-
-    private static final String STATUS_BAR_BRIGHTNESS_CONTROL =
-            "system:" + Settings.System.STATUS_BAR_BRIGHTNESS_CONTROL;
+public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces {
 
     private static final int MSG_LAUNCH_TRANSITION_TIMEOUT = 1003;
     private static final int MSG_LONG_PRESS_BRIGHTNESS_CHANGE = 1004;
@@ -654,7 +649,6 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces,
     private int mLinger;
     private int mQuickQsOffsetHeight;
     private boolean mBrightnessChanged;
-    private boolean mBrightnessControl;
     private float mCurrentBrightness;
 
     /**
@@ -982,8 +976,6 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces,
         }
 
         createAndAddWindows(result);
-
-        mTunerService.addTunable(this, STATUS_BAR_BRIGHTNESS_CONTROL);
 
         // Set up the initial notification state. This needs to happen before CommandQueue.disable()
         setUpPresenter();
@@ -1354,7 +1346,6 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces,
                         mShadeSurface.updateExpansionAndVisibility();
                         setBouncerShowingForStatusBarComponents(mBouncerShowing);
                         checkBarModes();
-                        mPhoneStatusBarViewController.setBrightnessControlEnabled(mBrightnessControl);
                         mBurnInProtectionController.setPhoneStatusBarView(mPhoneStatusBarViewController.getPhoneStatusBarView());
                     });
         }
@@ -3119,20 +3110,6 @@ public class CentralSurfacesImpl implements CoreStartable, CentralSurfaces,
         return (mStatusBarStateController.isDozing()
                 && mDozeServiceHost.getIgnoreTouchWhilePulsing())
                 || mScreenOffAnimationController.shouldIgnoreKeyguardTouches();
-    }
-
-    @Override
-    public void onTuningChanged(String key, String newValue) {
-        switch (key) {
-            case STATUS_BAR_BRIGHTNESS_CONTROL:
-                mBrightnessControl =
-                        TunerService.parseIntegerSwitch(newValue, false);
-                if (mPhoneStatusBarViewController != null)
-                    mPhoneStatusBarViewController.setBrightnessControlEnabled(mBrightnessControl);
-                break;
-            default:
-                break;
-         }
     }
 
     // Begin Extra BaseStatusBar methods.
